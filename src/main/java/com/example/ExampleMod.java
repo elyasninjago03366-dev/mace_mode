@@ -1,30 +1,47 @@
 package com.example;
 
 import net.fabricmc.api.ModInitializer;
-
-import net.minecraft.resources.ResourceLocation;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public class ExampleMod implements ModInitializer {
 	public static final String MOD_ID = "modid";
 
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			if (client.player == null || client.level == null || client.gameMode == null) return;
 
-		LOGGER.info("Hello Fabric world!");
-	}
+			// ۱. بررسی داشتن Mace در دست اصلی
+			boolean isHoldingMace = client.player.getMainHandItem().is(Items.MACE);
 
-	public static ResourceLocation id(String path) {
-		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+			// ۲. بررسی حالت سقوط (توی هوا باشه و سرعت حرکت رو به پایین باشه)
+			boolean isFalling = !client.player.onGround() && client.player.getDeltaMovement().y < 0;
+
+			if (!isHoldingMace || !isFalling) return;
+
+			// ۳. بررسی هدف‌گیری روی پلیر و فاصله ۳ بلاک یا کمتر
+			HitResult hitResult = client.hitResult;
+			if (hitResult != null && hitResult.getType() == HitResult.Type.ENTITY) {
+				EntityHitResult entityHit = (EntityHitResult) hitResult;
+
+				if (entityHit.getEntity() instanceof Player targetPlayer) {
+					double distance = client.player.distanceTo(targetPlayer);
+
+					if (distance <= 3.0) {
+						// بررسی پر بودن کول‌داون حمله (برای ضربه ۱۰۰٪ و دور زدن آنتی‌چیت)
+						if (client.player.getAttackStrengthScale(0.5f) >= 1.0f) {
+							client.gameMode.attack(client.player, targetPlayer);
+							client.player.swing(InteractionHand.MAIN_HAND);
+						}
+					}
+				}
+			}
+		});
 	}
 }
