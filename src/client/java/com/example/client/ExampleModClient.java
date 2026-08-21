@@ -26,7 +26,7 @@ public class ExampleModClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // ثبت کلید Right Shift با سیستم استاندارد فبریک برای پوجاو لانچر
+        // ثبت کلید Right Shift
         openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.ninjago.open_gui",
             InputConstants.Type.KEYSYM,
@@ -37,12 +37,12 @@ public class ExampleModClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.level == null || client.gameMode == null) return;
 
-            // ۱. باز کردن GUI با کلید ثبت‌شده
+            // ۱. باز کردن GUI با Right Shift
             while (openGuiKey.consumeClick()) {
                 client.setScreen(new NinjagoScreen());
             }
 
-            // ۲. ریست کردن تک‌ضربه وقتی روی زمینه
+            // ۲. ریست کردن حالت تک‌ضربه روی زمین
             if (client.player.onGround()) {
                 hasAttackedInCurrentFall = false;
                 return;
@@ -50,7 +50,7 @@ public class ExampleModClient implements ClientModInitializer {
 
             if (!enabled) return;
 
-            // ۳. منطق ضربه با میس
+            // ۳. منطق اتک میس
             boolean isHoldingMace = client.player.getMainHandItem().is(Items.MACE);
             boolean isFalling = !client.player.onGround() && client.player.getDeltaMovement().y < 0;
 
@@ -75,7 +75,7 @@ public class ExampleModClient implements ClientModInitializer {
         });
     }
 
-    // کلاس منوی گرافیکی Ninjago Client
+    // کلاس منوی گرافیکی شیشه‌ای Ninjago Client
     public static class NinjagoScreen extends Screen {
 
         private boolean draggingSlider = false;
@@ -86,17 +86,17 @@ public class ExampleModClient implements ClientModInitializer {
 
         @Override
         public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            // پس‌زمینه نیمه‌شفاف
-            guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+            // پس‌زمینه گیم بسیار لایت و شفاف (۲۵٪ تاریکی برای شفافیت کامل بازی)
+            guiGraphics.fill(0, 0, this.width, this.height, 0x40000000);
 
             int cardWidth = 280;
             int cardHeight = 210;
             int x = (this.width - cardWidth) / 2;
             int y = (this.height - cardHeight) / 2;
 
-            // Glass Container
-            guiGraphics.fill(x - 1, y - 1, x + cardWidth + 1, y + cardHeight + 1, 0xFF00F2FE);
-            guiGraphics.fill(x, y, x + cardWidth, y + cardHeight, 0xEE0B0E14);
+            // Glass Container - شفافیت شیشه‌ای واقعی (0x99)
+            guiGraphics.fill(x - 1, y - 1, x + cardWidth + 1, y + cardHeight + 1, 0xFF00F2FE); // کادر نئونی سایان
+            guiGraphics.fill(x, y, x + cardWidth, y + cardHeight, 0x990B0E14); // بدنه شیشه‌ای شفاف
 
             // Title
             guiGraphics.drawCenteredString(this.font, "NINJAGO CLIENT", x + cardWidth / 2, y + 15, 0xFF00F2FE);
@@ -106,14 +106,14 @@ public class ExampleModClient implements ClientModInitializer {
             String toggleText = ExampleModClient.enabled ? "ENABLED" : "DISABLED";
             int toggleColor = ExampleModClient.enabled ? 0xFF00FF88 : 0xFFFF4444;
             guiGraphics.drawString(this.font, "Mace Assist", x + 25, y + 50, 0xFFFFFFFF);
-            guiGraphics.fill(x + 180, y + 46, x + 255, y + 64, ExampleModClient.enabled ? 0x3300FF88 : 0x33FF4444);
+            guiGraphics.fill(x + 180, y + 46, x + 255, y + 64, ExampleModClient.enabled ? 0x6600FF88 : 0x66FF4444);
             guiGraphics.drawCenteredString(this.font, toggleText, x + 217, y + 51, toggleColor);
 
             // 2. Attack Mode Toggle
             String modeText = ExampleModClient.singleHitMode ? "SINGLE HIT" : "SPAM MODE";
             int modeColor = ExampleModClient.singleHitMode ? 0xFF00F2FE : 0xFFFFAA00;
             guiGraphics.drawString(this.font, "Attack Mode", x + 25, y + 85, 0xFFFFFFFF);
-            guiGraphics.fill(x + 170, y + 81, x + 255, y + 99, 0x3300F2FE);
+            guiGraphics.fill(x + 170, y + 81, x + 255, y + 99, 0x6600F2FE);
             guiGraphics.drawCenteredString(this.font, modeText, x + 212, y + 86, modeColor);
 
             // 3. Reach Distance Slider
@@ -137,7 +137,7 @@ public class ExampleModClient implements ClientModInitializer {
 
             // Footer
             guiGraphics.fill(x + 20, y + 180, x + cardWidth - 20, y + 181, 0x22FFFFFF);
-            guiGraphics.drawCenteredString(this.font, "made by elyasninjago", x + cardWidth / 2, y + 190, 0x88AAAAAA);
+            guiGraphics.drawCenteredString(this.font, "made by elyasninjago", x + cardWidth / 2, y + 190, 0xAAFFFFFF);
 
             super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
