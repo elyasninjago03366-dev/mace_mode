@@ -1,8 +1,10 @@
 package com.example.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.Minecraft;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -20,25 +22,27 @@ public class ExampleModClient implements ClientModInitializer {
     public static double reachDistance = 3.0;
 
     private static boolean hasAttackedInCurrentFall = false;
-    private static boolean rightShiftPressedLastFrame = false;
+    private static KeyMapping openGuiKey;
 
     @Override
     public void onInitializeClient() {
+        // ثبت کلید Right Shift با سیستم استاندارد فبریک برای پوجاو لانچر
+        openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            "key.ninjago.open_gui",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_RIGHT_SHIFT,
+            "category.ninjago.title"
+        ));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.level == null || client.gameMode == null) return;
 
-            // 1. Open GUI with Right Shift key
-            long windowHandle = Minecraft.getInstance().getWindow().getWindow();
-            boolean isRightShiftDown = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
-
-            if (isRightShiftDown && !rightShiftPressedLastFrame) {
-                if (client.screen == null) {
-                    client.setScreen(new NinjagoScreen());
-                }
+            // ۱. باز کردن GUI با کلید ثبت‌شده
+            while (openGuiKey.consumeClick()) {
+                client.setScreen(new NinjagoScreen());
             }
-            rightShiftPressedLastFrame = isRightShiftDown;
 
-            // 2. Reset single hit flag when on ground
+            // ۲. ریست کردن تک‌ضربه وقتی روی زمینه
             if (client.player.onGround()) {
                 hasAttackedInCurrentFall = false;
                 return;
@@ -46,14 +50,14 @@ public class ExampleModClient implements ClientModInitializer {
 
             if (!enabled) return;
 
-            // 3. Mace Assist Logic
+            // ۳. منطق ضربه با میس
             boolean isHoldingMace = client.player.getMainHandItem().is(Items.MACE);
             boolean isFalling = !client.player.onGround() && client.player.getDeltaMovement().y < 0;
 
             if (!isHoldingMace || !isFalling) return;
             if (singleHitMode && hasAttackedInCurrentFall) return;
 
-            // 4. Target all LivingEntities (mobs & players) within reach
+            // ۴. نشانه روی انتیتی
             HitResult hitResult = client.hitResult;
             if (hitResult != null && hitResult.getType() == HitResult.Type.ENTITY) {
                 EntityHitResult entityHit = (EntityHitResult) hitResult;
@@ -71,7 +75,7 @@ public class ExampleModClient implements ClientModInitializer {
         });
     }
 
-    // Ninjago Client GUI Class
+    // کلاس منوی گرافیکی Ninjago Client
     public static class NinjagoScreen extends Screen {
 
         private boolean draggingSlider = false;
@@ -82,7 +86,8 @@ public class ExampleModClient implements ClientModInitializer {
 
         @Override
         public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+            // پس‌زمینه نیمه‌شفاف
+            guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
 
             int cardWidth = 280;
             int cardHeight = 210;
